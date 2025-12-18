@@ -3,6 +3,9 @@ kind: API
 metadata:
   name: orders-api
   title: Orders Data Contract
+  description: Data contract for customer orders  # Opcional mas recomendado
 spec:
   type: datacontract
+  lifecycle: production  # Obrigatório: experimental, production, deprecated
+  owner: team-name       # Obrigatório: defina o owner no formato user:default/username ou group:default/team-name
   definition: $file:./datacontract.yaml
