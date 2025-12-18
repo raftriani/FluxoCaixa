@@ -3,9 +3,39 @@ kind: API
 metadata:
   name: orders-api
   title: Orders Data Contract
-  description: Data contract for customer orders  # Opcional mas recomendado
+  description: Data contract for customer orders
 spec:
   type: datacontract
-  lifecycle: production  # Obrigatório: experimental, production, deprecated
-  owner: team-name       # Obrigatório: defina o owner no formato user:default/username ou group:default/team-name
-  definition: $file:./datacontract.yaml
+  lifecycle: production
+  owner: user:default/guest
+  definition: |
+    dataContractSpecification: 0.9.2
+    id: urn:datacontract:checkout:orders-latest
+    info:
+      title: Orders Latest
+      version: 1.0.0
+      description: Successful customer orders in the webshop.
+      owner: checkout-team
+    servers:
+      prod:
+        type: s3
+        location: s3://my-bucket/orders/*.json
+        format: json
+    models:
+      orders:
+        type: table
+        description: Successful customer orders
+        fields:
+          order_id:
+            type: string
+            description: Primary key of the orders table
+            required: true
+            primary: true
+          customer_id:
+            type: string
+            description: Unique identifier for the customer
+            required: true
+          order_total:
+            type: number
+            description: Total amount of the order
+            required: true
