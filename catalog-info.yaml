@@ -1,0 +1,13 @@
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: orders-data-contract
+  title: Orders Data Contract
+  description: Data contract for customer orders
+  owner: checkout-team
+  tags:
+    - data-contract
+    - orders
+spec:
+  type: datacontract
+  definition: $file:./orders-datacontract.yaml
