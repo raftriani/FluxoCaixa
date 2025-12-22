@@ -1,41 +1,329 @@
+---
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: fluxo-caixa
+  title: Sistema de Fluxo de Caixa
+  description: Sistema de controle de fluxo de caixa com arquitetura de microsserviços
+  tags:
+    - dotnet
+    - microservices
+    - ddd
+    - csharp
+    - financial
+  links:
+    - url: https://github.com/raftriani/FluxoCaixa
+      title: Repositório GitHub
+      icon: github
+  annotations:
+    github.com/project-slug: raftriani/FluxoCaixa
+spec:
+  owner: user:default/rafael.triani
+  domain: financial
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: fluxocaixa-lancamentos-api
+  title: API de Lançamentos
+  description: Microsserviço responsável por gerenciar lançamentos de crédito e débito
+  tags:
+    - api
+    - dotnet-core
+    - microservice
+    - sql-server
+  annotations:
+    github.com/project-slug: raftriani/FluxoCaixa
+    backstage.io/techdocs-ref: dir:.
+spec:
+  type: service
+  lifecycle: production
+  owner: user:default/rafael.triani
+  system: fluxo-caixa
+  providesApis:
+    - lancamentos-api
+  dependsOn:
+    - resource:sqlserver-lancamentos
+    - resource:rabbitmq
+
+---
 apiVersion: backstage.io/v1alpha1
 kind: API
 metadata:
-  name: orders-api
-  title: Orders Data Contract
-  description: Data contract for customer orders
+  name: lancamentos-api
+  title: API de Lançamentos
+  description: API REST para lançamentos de crédito e débito no fluxo de caixa
+  tags:
+    - rest
+    - dotnet
 spec:
-  type: datacontract
+  type: openapi
   lifecycle: production
-  owner: user:default/guest
+  owner: user:default/rafael.triani
+  system: fluxo-caixa
   definition: |
-    dataContractSpecification: 0.9.2
-    id: urn:datacontract:checkout:orders-latest
+    openapi: 3.0.0
     info:
-      title: Orders Latest
+      title: Lançamentos API
       version: 1.0.0
-      description: Successful customer orders in the webshop.
-      owner: checkout-team
+      description: API para gerenciamento de lançamentos financeiros
     servers:
-      prod:
-        type: s3
-        location: s3://my-bucket/orders/*.json
-        format: json
-    models:
-      orders:
-        type: table
-        description: Successful customer orders
-        fields:
-          order_id:
-            type: string
-            description: Primary key of the orders table
+      - url: http://localhost:5001/cashier/api
+        description: Servidor local
+    paths:
+      /account/add-entry:
+        post:
+          summary: Adicionar lançamento de crédito ou débito
+          operationId: addEntry
+          tags:
+            - Account
+          requestBody:
             required: true
-            primary: true
-          customer_id:
-            type: string
-            description: Unique identifier for the customer
-            required: true
-          order_total:
-            type: number
-            description: Total amount of the order
-            required: true
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    Type:
+                      type: integer
+                      description: Tipo do lançamento (1 = Crédito, 2 = Débito)
+                    Value:
+                      type: number
+                      description: Valor do lançamento
+                    Description:
+                      type: string
+                      description: Descrição do lançamento
+          responses:
+            '200':
+              description: Lançamento criado com sucesso
+      /account/show-info:
+        get:
+          summary: Obter informações da conta
+          operationId: getAccountInfo
+          tags:
+            - Account
+          responses:
+            '200':
+              description: Informações da conta
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      value:
+                        type: number
+                      lastUpdate:
+                        type: string
+                        format: date-time
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: fluxocaixa-consolidacao-api
+  title: API de Consolidação
+  description: Microsserviço responsável por consolidar dados financeiros
+  tags:
+    - api
+    - dotnet-core
+    - microservice
+    - mongodb
+  annotations:
+    github.com/project-slug: raftriani/FluxoCaixa
+spec:
+  type: service
+  lifecycle: production
+  owner: user:default/rafael.triani
+  system: fluxo-caixa
+  providesApis:
+    - consolidacao-api
+  dependsOn:
+    - resource:mongodb-consolidacao
+    - resource:rabbitmq
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: consolidacao-api
+  title: API de Consolidação
+  description: API para consolidação de dados financeiros
+  tags:
+    - rest
+    - dotnet
+spec:
+  type: openapi
+  lifecycle: production
+  owner: user:default/rafael.triani
+  system: fluxo-caixa
+  definition: |
+    openapi: 3.0.0
+    info:
+      title: Consolidação API
+      version: 1.0.0
+    servers:
+      - url: http://localhost:5002/consolidation/api
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: fluxocaixa-relatorio-api
+  title: API de Relatórios
+  description: Microsserviço responsável por gerar relatórios consolidados
+  tags:
+    - api
+    - dotnet-core
+    - microservice
+    - mongodb
+  annotations:
+    github.com/project-slug: raftriani/FluxoCaixa
+spec:
+  type: service
+  lifecycle: production
+  owner: user:default/rafael.triani
+  system: fluxo-caixa
+  providesApis:
+    - relatorio-api
+  dependsOn:
+    - resource:mongodb-relatorio
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: relatorio-api
+  title: API de Relatórios
+  description: API REST para geração de relatórios diários consolidados
+  tags:
+    - rest
+    - dotnet
+spec:
+  type: openapi
+  lifecycle: production
+  owner: user:default/rafael.triani
+  system: fluxo-caixa
+  definition: |
+    openapi: 3.0.0
+    info:
+      title: Relatórios API
+      version: 1.0.0
+      description: API para geração de relatórios financeiros
+    servers:
+      - url: http://localhost:5003/reports/api
+    paths:
+      /report/show-daily-report:
+        get:
+          summary: Obter relatório diário consolidado
+          operationId: getDailyReport
+          tags:
+            - Report
+          parameters:
+            - name: month
+              in: query
+              required: true
+              schema:
+                type: integer
+            - name: year
+              in: query
+              required: true
+              schema:
+                type: integer
+            - name: day
+              in: query
+              required: true
+              schema:
+                type: integer
+          responses:
+            '200':
+              description: Relatório diário
+              content:
+                application/json:
+                  schema:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        userId:
+                          type: string
+                        userName:
+                          type: string
+                        entryType:
+                          type: integer
+                        entryValue:
+                          type: number
+                        accountValueAfterEntry:
+                          type: number
+                        entryDescription:
+                          type: string
+                        entryDate:
+                          type: string
+                          format: date-time
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: sqlserver-lancamentos
+  title: SQL Server - Lançamentos
+  description: Banco de dados SQL Server para persistência de lançamentos
+  tags:
+    - database
+    - sqlserver
+spec:
+  type: database
+  lifecycle: production
+  owner: user:default/rafael.triani
+  system: fluxo-caixa
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: mongodb-consolidacao
+  title: MongoDB - Consolidação
+  description: Banco de dados MongoDB para dados consolidados
+  tags:
+    - database
+    - mongodb
+    - nosql
+spec:
+  type: database
+  lifecycle: production
+  owner: user:default/rafael.triani
+  system: fluxo-caixa
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: mongodb-relatorio
+  title: MongoDB - Relatórios
+  description: Banco de dados MongoDB para relatórios
+  tags:
+    - database
+    - mongodb
+    - nosql
+spec:
+  type: database
+  lifecycle: production
+  owner: user:default/rafael.triani
+  system: fluxo-caixa
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: rabbitmq
+  title: RabbitMQ
+  description: Message broker para comunicação entre microsserviços
+  tags:
+    - messaging
+    - rabbitmq
+    - event-driven
+spec:
+  type: message-broker
+  lifecycle: production
+  owner: user:default/rafael.triani
+  system: fluxo-caixa
