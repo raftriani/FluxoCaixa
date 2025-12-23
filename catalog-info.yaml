@@ -330,7 +330,7 @@ spec:
 
 ---
 apiVersion: backstage.io/v1alpha1
-kind: Component
+kind: API
 metadata:
   name: contrato-aquisicao-software
   title: Contrato de Aquisição de Software
@@ -343,140 +343,94 @@ metadata:
   annotations:
     github.com/project-slug: raftriani/FluxoCaixa
 spec:
-  type: contract
+  type: ocds
   lifecycle: production
   owner: user:default/rafael.triani
   system: fluxo-caixa
   ocds:
+    schemaType: release
+    schemaVersion: 1.1.5
     data:
-      uri: "ocds-abc123-2024-001"
-      publishedDate: "2024-12-15T10:30:00Z"
-      publisher:
-        name: "Secretaria de Tecnologia da Informação"
-        scheme: "BR-CNPJ"
-        uid: "12.345.678/0001-90"
-        uri: "https://www.governo.br/sti"
-      releases:
-        - ocid: "ocds-abc123-2024-001"
-          id: "ocds-abc123-2024-001-tender-2024-12-15"
-          date: "2024-12-15T10:30:00Z"
-          tag:
-            - tender
-          initiationType: tender
-          language: pt
-          planning:
-            budget:
-              description: "Orçamento para aquisição de licenças de software de gestão financeira"
-              amount:
-                amount: 250000.00
+      ocid: ocds-fluxocaixa-2024-001
+      date: 2024-12-15T10:30:00Z
+      language: pt
+      buyer:
+        name: Secretaria de Tecnologia da Informação
+        id: BR-CNPJ-12.345.678/0001-90
+        address:
+          streetAddress: Av. Paulista, 1000
+          locality: São Paulo
+          region: SP
+          postalCode: 01310-100
+          countryName: Brasil
+        contactPoint:
+          name: João Silva
+          email: joao.silva@governo.br
+          telephone: +55 11 9999-8888
+      tender:
+        id: TENDER-2024-001
+        title: Aquisição de Sistema de Gestão Financeira
+        description: Contratação de solução de software para gestão de fluxo de caixa e relatórios financeiros consolidados
+        status: active
+        value:
+          amount: 250000.00
+          currency: BRL
+        procurementMethod: open
+        procurementMethodDetails: Pregão Eletrônico
+        tenderPeriod:
+          startDate: 2024-12-15T10:00:00Z
+          endDate: 2025-01-15T18:00:00Z
+        items:
+          - id: "1"
+            description: Licenças de software de gestão financeira - 100 usuários simultâneos
+            classification:
+              scheme: CPV
+              id: "48000000"
+              description: Pacotes de software e sistemas de informação
+            quantity: 100
+            unit:
+              name: Licença
+              value:
+                amount: 2000.00
                 currency: BRL
-              budgetBreakdown:
-                - id: "1"
-                  description: "Licenças de software"
-                  amount:
-                    amount: 200000.00
-                    currency: BRL
-                - id: "2"
-                  description: "Serviços de implementação e treinamento"
-                  amount:
-                    amount: 50000.00
-                    currency: BRL
-          tender:
-            id: "TENDER-2024-001"
-            title: "Aquisição de Sistema de Gestão Financeira"
-            description: "Contratação de solução de software para gestão de fluxo de caixa e relatórios financeiros consolidados"
-            status: active
-            procuringEntity:
-              name: "Secretaria de Tecnologia da Informação"
-              id: "BR-CNPJ-12.345.678/0001-90"
+          - id: "2"
+            description: Serviços de implementação, customização e treinamento
+            classification:
+              scheme: CPV
+              id: "72000000"
+              description: Serviços de TI consultoria e desenvolvimento
+            quantity: 1
+            unit:
+              name: Serviço
+              value:
+                amount: 50000.00
+                currency: BRL
+      awards:
+        - id: award-2024-001
+          status: pending
+          title: Proposta Vencedora
+          description: Aguardando homologação do resultado
+          date: 2025-01-30T18:00:00Z
+          value:
+            amount: 245000.00
+            currency: BRL
+          suppliers:
+            - name: TechSoft Soluções em Software Ltda
+              id: BR-CNPJ-98.765.432/0001-10
               address:
-                streetAddress: "Av. Paulista, 1000"
-                locality: "São Paulo"
-                region: "SP"
-                postalCode: "01310-100"
-                countryName: "Brasil"
-              contactPoint:
-                name: "João Silva"
-                email: "joao.silva@governo.br"
-                telephone: "+55 11 9999-8888"
-            value:
-              amount: 250000.00
-              currency: BRL
-            procurementMethod: open
-            procurementMethodDetails: "Pregão Eletrônico"
-            tenderPeriod:
-              startDate: "2024-12-15T10:00:00Z"
-              endDate: "2025-01-15T18:00:00Z"
-            items:
-              - id: "1"
-                description: "Licenças de software de gestão financeira - 100 usuários simultâneos"
-                classification:
-                  scheme: "CPV"
-                  id: "48000000"
-                  description: "Pacotes de software e sistemas de informação"
-                quantity: 100
-                unit:
-                  name: "Licença"
-                  value:
-                    amount: 2000.00
-                    currency: BRL
-              - id: "2"
-                description: "Serviços de implementação, customização e treinamento"
-                classification:
-                  scheme: "CPV"
-                  id: "72000000"
-                  description: "Serviços de TI: consultoria, desenvolvimento de software"
-                quantity: 1
-                unit:
-                  name: "Serviço"
-                  value:
-                    amount: 50000.00
-                    currency: BRL
-            documents:
-              - id: "1"
-                documentType: tenderNotice
-                title: "Edital de Licitação"
-                description: "Edital completo do processo licitatório"
-                url: "https://exemplo.gov.br/editais/2024-001.pdf"
-                datePublished: "2024-12-15T10:30:00Z"
-                format: application/pdf
-                language: pt
-              - id: "2"
-                documentType: technicalSpecifications
-                title: "Especificações Técnicas"
-                description: "Requisitos técnicos e funcionais do sistema"
-                url: "https://exemplo.gov.br/editais/2024-001-anexo-tech.pdf"
-                datePublished: "2024-12-15T10:30:00Z"
-                format: application/pdf
-                language: pt
-            milestones:
-              - id: "1"
-                title: "Abertura das propostas"
-                dueDate: "2025-01-15T18:00:00Z"
-                status: scheduled
-              - id: "2"
-                title: "Análise técnica das propostas"
-                dueDate: "2025-01-22T18:00:00Z"
-                status: scheduled
-              - id: "3"
-                title: "Homologação do resultado"
-                dueDate: "2025-01-30T18:00:00Z"
-                status: scheduled
-          parties:
-            - id: "BR-CNPJ-12.345.678/0001-90"
-              name: "Secretaria de Tecnologia da Informação"
-              roles:
-                - buyer
-              identifier:
-                scheme: "BR-CNPJ"
-                id: "12.345.678/0001-90"
-              address:
-                streetAddress: "Av. Paulista, 1000"
-                locality: "São Paulo"
-                region: "SP"
-                postalCode: "01310-100"
-                countryName: "Brasil"
-              contactPoint:
-                name: "João Silva"
-                email: "joao.silva@governo.br"
-                telephone: "+55 11 9999-8888"
+                streetAddress: Rua dos Desenvolvedores, 500
+                locality: São Paulo
+                region: SP
+                postalCode: 04567-890
+                countryName: Brasil
+      contracts:
+        - id: contract-2024-001
+          status: pending
+          title: Contrato de Fornecimento de Software
+          description: Contrato para fornecimento de licenças e serviços de implementação
+          period:
+            startDate: 2025-02-01T00:00:00Z
+            endDate: 2026-02-01T00:00:00Z
+          value:
+            amount: 245000.00
+            currency: BRL
