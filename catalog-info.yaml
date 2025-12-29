@@ -355,6 +355,9 @@ spec:
   lifecycle: production
   owner: user:default/rafael.triani
   system: fluxo-caixa
+  definition: |
+    # ODCS Data Contract - Transações Fluxo de Caixa
+    Este é um contrato de dados seguindo o padrão ODCS v3.1.0
   odcs:
     schemaType: dataContract
     schemaVersion: v3.1.0
