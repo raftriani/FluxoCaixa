@@ -43,6 +43,8 @@ spec:
   system: fluxo-caixa
   providesApis:
     - lancamentos-api
+  consumesApis:
+    - fluxocaixa-transacoes-data-contract
   dependsOn:
     - resource:sqlserver-lancamentos
     - resource:rabbitmq
@@ -138,6 +140,8 @@ spec:
   system: fluxo-caixa
   providesApis:
     - consolidacao-api
+  consumesApis:
+    - fluxocaixa-transacoes-data-contract
   dependsOn:
     - resource:mongodb-consolidacao
     - resource:rabbitmq
@@ -184,6 +188,8 @@ spec:
   lifecycle: production
   owner: user:default/rafael.triani
   system: fluxo-caixa
+  consumesApis:
+    - fluxocaixa-transacoes-data-contract
   providesApis:
     - relatorio-api
   dependsOn:
@@ -332,7 +338,7 @@ spec:
 # ODCS - Open Data Contract Standard v3.1.0
 # Contrato de Dados para transações do Sistema de Fluxo de Caixa
 apiVersion: backstage.io/v1alpha1
-kind: Component
+kind: API
 metadata:
   name: fluxocaixa-transacoes-data-contract
   title: Contrato de Dados - Transações do Fluxo de Caixa
@@ -350,6 +356,7 @@ spec:
   owner: user:default/rafael.triani
   system: fluxo-caixa
   odcs:
+    schemaType: dataContract
     schemaVersion: v3.1.0
     data:
       # Campos obrigatórios do ODCS v3.1.0
