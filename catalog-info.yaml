@@ -4,56 +4,161 @@ kind: System
 metadata:
   name: cross-plataforma-net-templates
   title: Cross Plataforma .NET Templates
-  description: Templates para geração de projetos .NET multiplataforma
+  description: Sistema de gerenciamento e geração de templates .NET multiplataforma
   tags:
     - dotnet
     - templates
     - scaffolding
     - yeoman
     - generator
+    - platform-engineering
   links:
     - url: https://github.com/plataform-templates
       title: Repositório GitHub
       icon: github
+    - url: https://docs.platform-templates.io
+      title: Documentação
+      icon: docs
   annotations:
-    github.com/project-slug: SQ-Green/cross-plataforma-net-templates
+    github.com/project-slug: platform-templates/dotnet-templates
 spec:
   owner: group:default/platform-team
   domain: platform-engineering
 
 ---
+# ============================================
+# COMPONENTES E SERVIÇOS
+# ============================================
+
 apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
-  name: dotnet-template-generator
-  title: .NET Template Generator
-  description: Gerador de templates para projetos .NET multiplataforma
+  name: template-catalog-service
+  title: Template Catalog Service
+  description: Serviço central de catálogo de templates .NET com busca e versionamento
   tags:
-    - template
+    - service
     - dotnet
-    - scaffolding
+    - aspnet-core
+    - api
   annotations:
-    github.com/project-slug: SQ-Green/cross-plataforma-net-templates
+    github.com/project-slug: platform-templates/template-catalog-service
     backstage.io/techdocs-ref: dir:.
 spec:
-  type: library
+  type: service
   lifecycle: production
   owner: group:default/platform-team
   system: cross-plataforma-net-templates
   providesApis:
-    - dotnet-template-api
-    - dotnet-templates-data-contract
+    - template-catalog-api
+    - template-search-api
+  consumesApis:
+    - template-metadata-data-contract
+    - template-configuration-data-contract
+  dependsOn:
+    - resource:postgres-template-catalog
+    - resource:redis-cache
+    - resource:azure-blob-storage
 
 ---
 apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: template-generator-service
+  title: Template Generator Service
+  description: Microsserviço responsável pela geração e scaffolding de projetos .NET
+  tags:
+    - service
+    - dotnet
+    - generator
+    - microservice
+  annotations:
+    github.com/project-slug: platform-templates/template-generator
+spec:
+  type: service
+  lifecycle: production
+  owner: group:default/platform-team
+  system: cross-plataforma-net-templates
+  providesApis:
+    - template-generator-api
+  consumesApis:
+    - template-catalog-api
+    - template-metadata-data-contract
+    - project-metadata-data-contract
+  dependsOn:
+    - resource:postgres-template-catalog
+    - resource:rabbitmq
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: template-versioning-service
+  title: Template Versioning Service
+  description: Serviço de controle de versões e histórico de templates
+  tags:
+    - service
+    - dotnet
+    - versioning
+  annotations:
+    github.com/project-slug: platform-templates/versioning-service
+spec:
+  type: service
+  lifecycle: production
+  owner: group:default/platform-team
+  system: cross-plataforma-net-templates
+  providesApis:
+    - template-versioning-api
+  consumesApis:
+    - template-metadata-data-contract
+    - template-version-history-data-contract
+  dependsOn:
+    - resource:postgres-template-catalog
+    - resource:azure-blob-storage
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: template-analytics-service
+  title: Template Analytics Service
+  description: Serviço de analytics e métricas de uso de templates
+  tags:
+    - service
+    - dotnet
+    - analytics
+    - mongodb
+  annotations:
+    github.com/project-slug: platform-templates/analytics-service
+spec:
+  type: service
+  lifecycle: production
+  owner: group:default/platform-team
+  system: cross-plataforma-net-templates
+  providesApis:
+    - template-analytics-api
+  consumesApis:
+    - template-usage-data-contract
+    - project-metadata-data-contract
+  dependsOn:
+    - resource:mongodb-analytics
+    - resource:rabbitmq
+
+---
+# ============================================
+# APIs
+# ============================================
+
+apiVersion: backstage.io/v1alpha1
 kind: API
 metadata:
-  name: dotnet-template-api
-  title: .NET Template API
-  description: API para geração de templates .NET
+  name: template-catalog-api
+  title: Template Catalog API
+  description: API REST para gerenciamento do catálogo de templates .NET
   tags:
-    - template
+    - rest
     - dotnet
+    - catalog
 spec:
   type: openapi
   lifecycle: production
@@ -62,365 +167,838 @@ spec:
   definition: |
     openapi: 3.0.0
     info:
-      title: .NET Template API
-      version: 1.0.0
-      description: API para geração e scaffolding de templates .NET
+      title: Template Catalog API
+      version: 2.0.0
+      description: API para gerenciamento completo do catálogo de templates .NET
     servers:
-      - url: http://localhost:8080
-        description: Servidor local
+      - url: https://api.platform-templates.io/catalog/v2
+        description: Production
+      - url: http://localhost:5000/catalog/v2
+        description: Development
+    paths:
+      /templates:
+        get:
+          summary: Listar todos os templates disponíveis
+          operationId: listTemplates
+          tags:
+            - Templates
+          parameters:
+            - name: category
+              in: query
+              schema:
+                type: string
+                enum: [web-api, microservice, console, library, worker-service]
+            - name: dotnetVersion
+              in: query
+              schema:
+                type: string
+          responses:
+            '200':
+              description: Lista de templates
+        post:
+          summary: Criar novo template
+          operationId: createTemplate
+          tags:
+            - Templates
+          responses:
+            '201':
+              description: Template criado
+      /templates/{templateId}:
+        get:
+          summary: Obter detalhes do template
+          parameters:
+            - name: templateId
+              in: path
+              required: true
+              schema:
+                type: string
+          responses:
+            '200':
+              description: Detalhes do template
+        put:
+          summary: Atualizar template
+          responses:
+            '200':
+              description: Template atualizado
+        delete:
+          summary: Remover template
+          responses:
+            '204':
+              description: Template removido
 
 ---
-# ODCS v3.1.0 - Open Data Contract Standard
-# Contrato de dados para templates .NET
 apiVersion: backstage.io/v1alpha1
 kind: API
 metadata:
-  name: dotnet-templates-data-contract
-  title: Contrato de Dados - Templates .NET
-  description: Contrato de dados definindo a estrutura dos templates .NET gerados
+  name: template-search-api
+  title: Template Search API
+  description: API de busca avançada de templates
   tags:
-    - templates
-    - metadata
-    - dotnet
+    - rest
+    - search
+spec:
+  type: openapi
+  lifecycle: production
+  owner: group:default/platform-team
+  system: cross-plataforma-net-templates
+  definition: |
+    openapi: 3.0.0
+    info:
+      title: Template Search API
+      version: 1.0.0
+    servers:
+      - url: https://api.platform-templates.io/search/v1
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: template-generator-api
+  title: Template Generator API
+  description: API para geração de projetos a partir de templates
+  tags:
+    - rest
+    - generator
+spec:
+  type: openapi
+  lifecycle: production
+  owner: group:default/platform-team
+  system: cross-plataforma-net-templates
+  definition: |
+    openapi: 3.0.0
+    info:
+      title: Template Generator API
+      version: 1.0.0
+      description: API para scaffolding e geração de projetos .NET
+    servers:
+      - url: https://api.platform-templates.io/generator/v1
+    paths:
+      /generate:
+        post:
+          summary: Gerar projeto a partir de template
+          operationId: generateProject
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    templateId:
+                      type: string
+                    projectName:
+                      type: string
+                    targetFramework:
+                      type: string
+                    parameters:
+                      type: object
+          responses:
+            '200':
+              description: Projeto gerado com sucesso
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: template-versioning-api
+  title: Template Versioning API
+  description: API de versionamento de templates
+  tags:
+    - rest
+    - versioning
+spec:
+  type: openapi
+  lifecycle: production
+  owner: group:default/platform-team
+  system: cross-plataforma-net-templates
+  definition: |
+    openapi: 3.0.0
+    info:
+      title: Template Versioning API
+      version: 1.0.0
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: template-analytics-api
+  title: Template Analytics API
+  description: API de analytics e métricas
+  tags:
+    - rest
+    - analytics
+spec:
+  type: openapi
+  lifecycle: production
+  owner: group:default/platform-team
+  system: cross-plataforma-net-templates
+  definition: |
+    openapi: 3.0.0
+    info:
+      title: Template Analytics API
+      version: 1.0.0
+
+---
+# ============================================
+# RECURSOS (DATABASES, STORAGE, MESSAGING)
+# ============================================
+
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: postgres-template-catalog
+  title: PostgreSQL - Template Catalog
+  description: Banco de dados PostgreSQL para armazenamento de metadados e configurações de templates
+  tags:
+    - database
+    - postgresql
+    - relational
+spec:
+  type: database
+  lifecycle: production
+  owner: group:default/platform-team
+  system: cross-plataforma-net-templates
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: mongodb-analytics
+  title: MongoDB - Analytics
+  description: Banco de dados MongoDB para armazenamento de métricas e analytics
+  tags:
+    - database
+    - mongodb
+    - nosql
+    - analytics
+spec:
+  type: database
+  lifecycle: production
+  owner: group:default/platform-team
+  system: cross-plataforma-net-templates
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: redis-cache
+  title: Redis Cache
+  description: Cache distribuído Redis para otimização de consultas
+  tags:
+    - cache
+    - redis
+    - in-memory
+spec:
+  type: cache
+  lifecycle: production
+  owner: group:default/platform-team
+  system: cross-plataforma-net-templates
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: azure-blob-storage
+  title: Azure Blob Storage
+  description: Armazenamento de arquivos de templates e assets
+  tags:
+    - storage
+    - azure
+    - blob
+spec:
+  type: storage
+  lifecycle: production
+  owner: group:default/platform-team
+  system: cross-plataforma-net-templates
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: rabbitmq
+  title: RabbitMQ
+  description: Message broker para comunicação assíncrona entre serviços
+  tags:
+    - messaging
+    - rabbitmq
+    - event-driven
+spec:
+  type: message-broker
+  lifecycle: production
+  owner: group:default/platform-team
+  system: cross-plataforma-net-templates
+
+---
+# ============================================
+# CONTRATOS DE DADOS ODCS v3.1.0
+# ============================================
+
+# CONTRATO 1: Template Metadata
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: template-metadata-data-contract
+  title: ODCS - Template Metadata
+  description: Contrato de dados ODCS v3.1.0 para metadados de templates .NET
+  tags:
     - odcs
+    - data-contract
+    - metadata
+    - templates
   annotations:
-    github.com/project-slug: SQ-Green/cross-plataforma-net-templates
+    github.com/project-slug: platform-templates/data-contracts
 spec:
   type: odcs
   lifecycle: production
   owner: group:default/platform-team
   system: cross-plataforma-net-templates
   definition: |
-    # ODCS Data Contract - Templates .NET
-    Contrato de dados seguindo o padrão ODCS v3.1.0 para templates .NET
+    # ODCS Data Contract - Template Metadata
+    Contrato de dados completo para metadados de templates .NET
   odcs:
     schemaType: dataContract
     schemaVersion: v3.1.0
     data:
-      # Campos obrigatórios do ODCS v3.1.0
+      # Campos obrigatórios ODCS v3.1.0
       apiVersion: v3.1.0
       kind: DataContract
-      id: dotnet-templates-dc-v1-001
-      version: 3.1.0
+      id: template-metadata-dc-v2-001
+      version: 2.1.0
       status: active
       
-      # Informações fundamentais
-      name: dotnet-templates-metadata
+      name: template-metadata-contract
       domain: platform-engineering
-      dataProduct: dotnet-templates
-      tenant: DotNetTemplatesSystem
+      dataProduct: dotnet-template-metadata
+      tenant: PlatformTemplatesSystem
       
       authoritativeDefinitions:
         - type: canonical
-          url: https://github.com/plataform-templates
-          description: URL canônica do repositório de templates
+          url: https://github.com/plataform-templates/data-contracts
+          description: URL canônica do repositório de contratos de dados
         - type: documentation
-          url: https://bitol-io.github.io/open-data-contract-standard/v3.1.0/
-          description: Documentação oficial ODCS v3.1.0
+          url: https://docs.platform-templates.io/data-contracts/metadata
+          description: Documentação do contrato de metadados
+        - type: businessDefinition
+          url: https://wiki.platform-templates.io/metadata-spec
+          description: Especificação de negócio dos metadados
 
       description:
-        purpose: Estrutura de dados dos templates .NET para scaffolding de projetos
-        limitations: Templates limitados ao ecossistema .NET
-        usage: Geração automatizada de projetos .NET com padrões estabelecidos
+        purpose: Armazenar e gerenciar metadados completos de templates .NET incluindo informações de versionamento, dependências, configurações e classificação
+        limitations: |
+          - Histórico de versões mantido por 5 anos
+          - Máximo de 50 dependências por template
+          - Tags limitadas a 20 por template
+        usage: |
+          Utilizado por:
+          - Template Catalog Service para busca e listagem
+          - Template Generator Service para validação e geração
+          - Analytics Service para métricas e relatórios
+          - Versioning Service para controle de mudanças
         authoritativeDefinitions:
-          - type: businessDefinition
-            url: https://github.com/plataform-templates/wiki
-            description: Definição de negócio do contrato de dados
+          - type: schemaDiagram
+            url: https://docs.platform-templates.io/diagrams/metadata-schema.png
+            description: Diagrama do schema de metadados
       
       tags:
         - dotnet
         - templates
+        - metadata
         - scaffolding
         - platform-engineering
       
-      # Servidores e infraestrutura
+      # Infraestrutura
       servers:
-        - id: template_repository
-          server: template-repository
-          type: github
-          host: github.com
-          organization: SQ-Green
-          repository: cross-plataforma-net-templates
-
-  # Schema dos templates
+        - id: postgres_prod
+          server: postgres-template-catalog
+          type: postgres
+          host: postgres-prod.platform.io
+          port: 5432
+          database: template_catalog
+          schema: metadata
+        - id: postgres_staging
+          server: postgres-staging
+          type: postgres
+          host: postgres-staging.platform.io
+          port: 5432
+          database: template_catalog_staging
+          schema: metadata
+      
+      # Schema detalhado
       schema:
-        - id: template_metadata
-          name: template_metadata
-          physicalName: template_metadata
-          physicalType: json-schema
-          businessName: Template Metadata
-          description: Metadados dos templates .NET disponíveis
-          tags: ['metadata', 'templates']
-          dataGranularityDescription: Um registro por template disponível
+        - id: templates_tbl
+          name: templates
+          physicalName: tbl_templates
+          physicalType: table
+          businessName: Templates Master Table
+          description: Tabela principal com todos os templates disponíveis no catálogo
+          tags: ['master-data', 'templates', 'core']
+          dataGranularityDescription: Um registro por template único. Cada versão do template possui registro separado.
+          
+          authoritativeDefinitions:
+            - url: https://docs.platform-templates.io/schema/templates
+              type: technicalDefinition
           
           properties:
-            - id: template_id_prop
+            - id: template_id
               name: template_id
-              physicalName: templateId
+              physicalName: template_id
               primaryKey: true
               primaryKeyPosition: 1
-              businessName: Identificador do Template
-              logicalType: string
-              physicalType: varchar(100)
+              businessName: Template Identifier
+              logicalType: uuid
+              physicalType: uuid
               required: true
-              description: Identificador único do template
+              description: Identificador único universal do template
               partitioned: false
               criticalDataElement: true
-              tags: ['identifier']
+              tags: ['identifier', 'primary-key']
               classification: public
+              unique: true
               examples:
-                - "dotnet-web-api-template"
-                - "dotnet-microservice-template"
-                - "dotnet-console-app-template"
+                - "a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d"
+                - "f1e2d3c4-b5a6-7c8d-9e0f-1a2b3c4d5e6f"
+              quality:
+                - metric: uniqueness
+                  mustBe: 100
+                  description: ID deve ser único em toda a base
+                  dimension: uniqueness
+                  type: library
+                  severity: error
+                  businessImpact: critical
 
-            - id: template_name_prop
+            - id: template_name
               name: template_name
-              physicalName: templateName
+              physicalName: template_name
               primaryKey: false
-              businessName: Nome do Template
+              businessName: Template Name
               logicalType: string
               physicalType: varchar(255)
               required: true
-              description: Nome descritivo do template
+              description: Nome descritivo e amigável do template
               classification: public
+              tags: ['searchable', 'display']
               examples:
-                - ".NET Web API Template"
-                - ".NET Microservice Template"
-                - ".NET Console Application"
+                - ".NET 8 Web API with Authentication"
+                - "Microservice Template with Event Sourcing"
+                - "Clean Architecture Console App"
+              quality:
+                - metric: nullValues
+                  mustBe: 0
+                  description: Nome não pode ser nulo
+                  dimension: completeness
+                  type: library
+                  severity: error
+                  businessImpact: critical
+                - metric: length
+                  mustBeGreaterThan: 5
+                  mustBeLessThan: 255
+                  description: Nome deve ter entre 5 e 255 caracteres
+                  dimension: validity
+                  type: custom
+                  severity: warning
+                  businessImpact: operational
 
-            - id: template_version_prop
-              name: template_version
-              physicalName: templateVersion
+            - id: template_slug
+              name: template_slug
+              physicalName: template_slug
               primaryKey: false
-              businessName: Versão do Template
+              businessName: Template Slug
               logicalType: string
-              physicalType: varchar(20)
+              physicalType: varchar(200)
               required: true
-              description: Versão semântica do template
+              unique: true
+              description: Identificador textual único para URLs e referências
               classification: public
+              tags: ['identifier', 'url-safe']
               examples:
-                - "1.0.0"
-                - "2.1.0"
-                - "3.0.0-beta"
+                - "dotnet8-webapi-auth"
+                - "microservice-eventsourcing"
+                - "clean-architecture-console"
               quality:
                 - metric: pattern
-                  mustBe: ^\d+\.\d+\.\d+(-[a-zA-Z0-9]+)?$
-                  description: Deve seguir versionamento semântico
+                  mustBe: ^[a-z0-9]+(?:-[a-z0-9]+)*$
+                  description: Deve seguir padrão kebab-case
                   dimension: validity
                   type: regex
                   severity: error
                   businessImpact: operational
 
-            - id: dotnet_version_prop
-              name: dotnet_version
-              physicalName: dotnetVersion
+            - id: template_version
+              name: template_version
+              physicalName: template_version
               primaryKey: false
-              businessName: Versão do .NET
+              businessName: Template Version
               logicalType: string
               physicalType: varchar(20)
               required: true
-              description: Versão do .NET Framework ou .NET Core suportada
+              description: Versão semântica do template seguindo SemVer 2.0
               classification: public
+              tags: ['version', 'semver']
+              examples:
+                - "1.0.0"
+                - "2.3.1"
+                - "3.0.0-beta.1"
+                - "1.5.2-rc.2"
+              quality:
+                - metric: pattern
+                  mustBe: ^\d+\.\d+\.\d+(-[a-zA-Z0-9.-]+)?(\+[a-zA-Z0-9.-]+)?$
+                  description: Deve seguir versionamento semântico (SemVer)
+                  dimension: validity
+                  type: regex
+                  severity: error
+                  businessImpact: operational
+                  schedule: "0 */6 * * *"
+                  scheduler: cron
+
+            - id: dotnet_version
+              name: dotnet_version
+              physicalName: dotnet_version
+              primaryKey: false
+              businessName: Target .NET Version
+              logicalType: string
+              physicalType: varchar(20)
+              required: true
+              description: Versão do .NET Framework/Core para qual o template é destinado
+              classification: public
+              tags: ['framework', 'compatibility']
               examples:
                 - "net6.0"
                 - "net7.0"
                 - "net8.0"
+                - "net9.0"
+              encryptedName: null
+              transformLogic: "SELECT target_framework FROM project_config WHERE template_id = tbl_templates.template_id"
+              transformDescription: Extrai a versão do .NET do arquivo de configuração do projeto
 
-            - id: template_type_prop
-              name: template_type
-              physicalName: templateType
+            - id: template_category
+              name: template_category
+              physicalName: template_category
               primaryKey: false
-              businessName: Tipo do Template
+              businessName: Template Category
               logicalType: string
               physicalType: varchar(50)
               required: true
-              description: Categoria do template
+              description: Categoria principal do template
               classification: public
+              tags: ['classification', 'taxonomy']
               examples:
                 - "web-api"
                 - "microservice"
-                - "console"
+                - "console-app"
                 - "library"
                 - "worker-service"
+                - "blazor-wasm"
+                - "blazor-server"
+              quality:
+                - metric: allowedValues
+                  mustBe: ['web-api', 'microservice', 'console-app', 'library', 'worker-service', 'blazor-wasm', 'blazor-server', 'grpc-service', 'function-app']
+                  description: Categoria deve ser um dos valores permitidos
+                  dimension: validity
+                  type: library
+                  severity: error
+                  businessImpact: operational
 
-            - id: created_date_prop
-              name: created_date
-              physicalName: createdDate
-              primaryKey: false
-              businessName: Data de Criação
-              logicalType: timestamp
-              physicalType: datetime
-              required: true
-              description: Data e hora de criação do template
-              partitioned: true
-              partitionKeyPosition: 1
-              classification: public
-              examples:
-                - "2024-01-15T10:30:00Z"
-                - "2024-06-20T14:45:00Z"
-
-            - id: author_prop
-              name: author
-              physicalName: author
-              primaryKey: false
-              businessName: Autor do Template
-              logicalType: string
-              physicalType: varchar(100)
-              required: false
-              description: Nome do autor ou equipe responsável
-              classification: internal
-              examples:
-                - "Platform Team"
-                - "Platform Engineering"
-
-            - id: description_prop
+            - id: description
               name: description
               physicalName: description
               primaryKey: false
-              businessName: Descrição do Template
+              businessName: Template Description
               logicalType: string
               physicalType: text
-              required: false
-              description: Descrição detalhada do template e seus recursos
+              required: true
+              description: Descrição detalhada do template, seus recursos e casos de uso
               classification: public
-
-            - id: dependencies_prop
-              name: dependencies
-              physicalName: dependencies
-              primaryKey: false
-              businessName: Dependências
-              logicalType: array
-              physicalType: json
-              required: false
-              description: Lista de dependências NuGet e bibliotecas necessárias
-              classification: public
+              tags: ['searchable', 'documentation']
               examples:
-                - '["Microsoft.AspNetCore.App", "Swashbuckle.AspNetCore"]'
-                - '["Serilog", "MediatR"]'
+                - "Template completo para criação de Web APIs RESTful com autenticação JWT, Swagger, Entity Framework Core e padrão Repository"
 
-          quality:
-            - metric: rowCount
-              mustBeGreaterThan: 0
-              type: library
-              description: Deve haver pelo menos um template disponível
-              dimension: completeness
-              severity: warning
-              businessImpact: operational
-
-        - id: template_configuration
-          name: template_configuration
-          physicalName: template_configuration
-          physicalType: json-schema
-          businessName: Template Configuration
-          description: Configurações e parâmetros dos templates
-          tags: ['configuration', 'settings']
-          
-          relationships:
-            - type: foreignKey
-              from:
-                - template_configuration.template_id
-              to:
-                - template_metadata.template_id
-              customProperties:
-                - property: description
-                  value: "Relacionamento com metadados do template"
-                - property: cardinality
-                  value: "many-to-one"
-
-          properties:
-            - id: config_id_prop
-              name: config_id
-              physicalName: configId
-              primaryKey: true
-              primaryKeyPosition: 1
-              businessName: Identificador da Configuração
+            - id: author_name
+              name: author_name
+              physicalName: author_name
+              primaryKey: false
+              businessName: Template Author
               logicalType: string
               physicalType: varchar(100)
               required: true
-              description: Identificador único da configuração
-              classification: public
-
-            - id: config_template_id_prop
-              name: template_id
-              physicalName: templateId
-              primaryKey: false
-              businessName: ID do Template
-              logicalType: string
-              physicalType: varchar(100)
-              required: true
-              description: Referência ao template
-              classification: public
-              relationships:
-                - to: template_metadata.template_id
-                  type: foreignKey
-
-            - id: parameter_name_prop
-              name: parameter_name
-              physicalName: parameterName
-              primaryKey: false
-              businessName: Nome do Parâmetro
-              logicalType: string
-              physicalType: varchar(100)
-              required: true
-              description: Nome do parâmetro de configuração
-              classification: public
+              description: Nome do autor ou equipe responsável pelo template
+              classification: internal
+              tags: ['author', 'ownership']
               examples:
-                - "ProjectName"
-                - "TargetFramework"
-                - "AuthenticationType"
+                - "Platform Engineering Team"
+                - "DevOps Squad"
+                - "Architecture Guild"
 
-            - id: parameter_type_prop
-              name: parameter_type
-              physicalName: parameterType
+            - id: author_email
+              name: author_email
+              physicalName: author_email
               primaryKey: false
-              businessName: Tipo do Parâmetro
-              logicalType: string
-              physicalType: varchar(50)
-              required: true
-              description: Tipo de dado do parâmetro
-              classification: public
-              examples:
-                - "string"
-                - "boolean"
-                - "choice"
-                - "number"
-
-            - id: default_value_prop
-              name: default_value
-              physicalName: defaultValue
-              primaryKey: false
-              businessName: Valor Padrão
+              businessName: Author Email
               logicalType: string
               physicalType: varchar(255)
               required: false
-              description: Valor padrão do parâmetro
-              classification: public
+              description: Email de contato do autor ou equipe
+              classification: restricted
+              tags: ['contact', 'pii']
+              examples:
+                - "platform-team@example.com"
+              quality:
+                - metric: pattern
+                  mustBe: ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$
+                  description: Deve ser um email válido
+                  dimension: validity
+                  type: regex
+                  severity: warning
+                  businessImpact: operational
 
-            - id: is_required_prop
-              name: is_required
-              physicalName: isRequired
+            - id: created_date
+              name: created_date
+              physicalName: created_date
               primaryKey: false
-              businessName: É Obrigatório
+              businessName: Creation Date
+              logicalType: timestamp
+              physicalType: timestamp with time zone
+              required: true
+              description: Data e hora de criação do template no catálogo
+              partitioned: true
+              partitionKeyPosition: 1
+              partitionStrategy: monthly
+              classification: public
+              tags: ['audit', 'temporal']
+              examples:
+                - "2024-01-15T10:30:00Z"
+                - "2024-06-20T14:45:30Z"
+              quality:
+                - metric: futureDate
+                  mustBe: false
+                  description: Data não pode ser futura
+                  dimension: validity
+                  type: custom
+                  severity: error
+                  businessImpact: operational
+
+            - id: updated_date
+              name: updated_date
+              physicalName: updated_date
+              primaryKey: false
+              businessName: Last Update Date
+              logicalType: timestamp
+              physicalType: timestamp with time zone
+              required: true
+              description: Data e hora da última atualização do template
+              classification: public
+              tags: ['audit', 'temporal']
+              examples:
+                - "2024-12-01T16:20:00Z"
+              
+            - id: is_active
+              name: is_active
+              physicalName: is_active
+              primaryKey: false
+              businessName: Is Active
               logicalType: boolean
               physicalType: boolean
               required: true
-              description: Indica se o parâmetro é obrigatório
+              description: Indica se o template está ativo e disponível para uso
               classification: public
+              tags: ['status', 'lifecycle']
               examples:
                 - true
                 - false
 
-      # Qualidade dos dados
+            - id: is_deprecated
+              name: is_deprecated
+              physicalName: is_deprecated
+              primaryKey: false
+              businessName: Is Deprecated
+              logicalType: boolean
+              physicalType: boolean
+              required: true
+              description: Indica se o template foi marcado como obsoleto
+              classification: public
+              tags: ['status', 'lifecycle']
+              examples:
+                - false
+
+            - id: deprecation_message
+              name: deprecation_message
+              physicalName: deprecation_message
+              primaryKey: false
+              businessName: Deprecation Message
+              logicalType: string
+              physicalType: text
+              required: false
+              description: Mensagem explicando a deprecação e alternativas
+              classification: public
+              examples:
+                - "Este template foi substituído por dotnet8-webapi-minimal. Migre para a nova versão."
+
+            - id: tags
+              name: tags
+              physicalName: tags
+              primaryKey: false
+              businessName: Template Tags
+              logicalType: array
+              physicalType: jsonb
+              required: false
+              description: Array de tags para classificação e busca do template
+              classification: public
+              tags: ['searchable', 'metadata']
+              examples:
+                - '["authentication", "jwt", "swagger", "ef-core"]'
+                - '["event-sourcing", "cqrs", "ddd", "mediatr"]'
+                - '["minimal-api", "fastendpoints", "net8"]'
+              quality:
+                - metric: maxArrayLength
+                  mustBeLessThan: 20
+                  description: Máximo de 20 tags por template
+                  dimension: validity
+                  type: custom
+                  severity: warning
+                  businessImpact: operational
+
+            - id: license
+              name: license
+              physicalName: license
+              primaryKey: false
+              businessName: License Type
+              logicalType: string
+              physicalType: varchar(50)
+              required: true
+              description: Tipo de licença do template
+              classification: public
+              examples:
+                - "MIT"
+                - "Apache-2.0"
+                - "GPL-3.0"
+                - "Proprietary"
+
+            - id: repository_url
+              name: repository_url
+              physicalName: repository_url
+              primaryKey: false
+              businessName: Repository URL
+              logicalType: string
+              physicalType: varchar(500)
+              required: false
+              description: URL do repositório de código-fonte do template
+              classification: public
+              examples:
+                - "https://github.com/plataform-templates/webapi-template"
+              quality:
+                - metric: pattern
+                  mustBe: ^https?://.*
+                  description: Deve ser uma URL válida
+                  dimension: validity
+                  type: regex
+                  severity: warning
+                  businessImpact: operational
+
+            - id: documentation_url
+              name: documentation_url
+              physicalName: documentation_url
+              primaryKey: false
+              businessName: Documentation URL
+              logicalType: string
+              physicalType: varchar(500)
+              required: false
+              description: URL da documentação do template
+              classification: public
+              examples:
+                - "https://docs.platform-templates.io/templates/webapi"
+
+            - id: download_count
+              name: download_count
+              physicalName: download_count
+              primaryKey: false
+              businessName: Download Count
+              logicalType: integer
+              physicalType: integer
+              required: true
+              description: Contador total de downloads/usos do template
+              classification: public
+              tags: ['metrics', 'analytics']
+              examples:
+                - 1523
+                - 8967
+              quality:
+                - metric: minimum
+                  mustBeGreaterThanOrEqualTo: 0
+                  description: Contador não pode ser negativo
+                  dimension: validity
+                  type: library
+                  severity: error
+                  businessImpact: operational
+
+            - id: rating_average
+              name: rating_average
+              physicalName: rating_average
+              primaryKey: false
+              businessName: Average Rating
+              logicalType: decimal
+              physicalType: numeric(3,2)
+              required: false
+              description: Avaliação média do template (0-5)
+              classification: public
+              tags: ['metrics', 'quality']
+              examples:
+                - 4.75
+                - 3.82
+              quality:
+                - metric: range
+                  mustBeGreaterThanOrEqualTo: 0
+                  mustBeLessThanOrEqualTo: 5
+                  description: Rating deve estar entre 0 e 5
+                  dimension: validity
+                  type: custom
+                  severity: warning
+                  businessImpact: operational
+
+            - id: metadata_json
+              name: metadata_json
+              physicalName: metadata_json
+              primaryKey: false
+              businessName: Extended Metadata
+              logicalType: object
+              physicalType: jsonb
+              required: false
+              description: Metadados adicionais em formato JSON flexível
+              classification: public
+              examples:
+                - '{"icon": "api", "color": "#007acc", "featured": true}'
+          
+          quality:
+            - metric: rowCount
+              mustBeGreaterThan: 0
+              type: library
+              description: Deve haver pelo menos um template no catálogo
+              dimension: completeness
+              severity: warning
+              businessImpact: operational
+              schedule: "0 0 * * *"
+              scheduler: cron
+            
+            - metric: completeness
+              mustBeGreaterThanOrEqualTo: 95
+              description: Pelo menos 95% dos templates devem ter todos os campos obrigatórios preenchidos
+              dimension: completeness
+              type: custom
+              severity: error
+              businessImpact: critical
+              schedule: "0 */4 * * *"
+              scheduler: cron
+
+      # Qualidade global
       quality:
         - metric: freshness
           mustBeLessThan: 7
           type: custom
-          description: Templates devem ser atualizados semanalmente
+          description: Templates devem ser revisados semanalmente
           dimension: timeliness
           severity: warning
           businessImpact: operational
-          schedule: 0 0 * * 0
+          schedule: "0 0 * * 0"
           scheduler: cron
+          method: automated
 
         - metric: completeness
           mustBe: 100
@@ -429,6 +1007,18 @@ spec:
           type: library
           severity: error
           businessImpact: critical
+          schedule: "0 */6 * * *"
+          scheduler: cron
+
+        - metric: accuracy
+          mustBeGreaterThanOrEqualTo: 98
+          description: Precisão dos metadados verificada por validação automatizada
+          dimension: accuracy
+          type: custom
+          severity: error
+          businessImpact: critical
+          schedule: "0 2 * * *"
+          scheduler: cron
 
       # Pricing
       price:
@@ -436,71 +1026,112 @@ spec:
         priceCurrency: BRL
         priceUnit: template
       
-      # Equipe responsável
+      # Equipe
       team:
         name: platform-engineering
-        description: Equipe de Engenharia de Plataforma responsável pelos templates
+        description: Equipe de Engenharia de Plataforma responsável pelo sistema de templates
         members:
-          - username: platform-lead
+          - username: john.doe
             role: Tech Lead
-            description: Líder técnico da plataforma
-            dateIn: "2024-01-01"
-          - username: devops-engineer
+            description: Líder técnico da plataforma de templates
+            dateIn: "2023-06-01"
+          - username: jane.smith
+            role: Senior Backend Engineer
+            description: Desenvolvimento do Catalog Service
+            dateIn: "2023-08-15"
+          - username: bob.johnson
             role: DevOps Engineer
-            description: Engenheiro responsável pela automação
-            dateIn: "2024-01-15"
+            description: Infraestrutura e CI/CD
+            dateIn: "2023-09-01"
+          - username: alice.williams
+            role: Data Engineer
+            description: Contratos de dados e analytics
+            dateIn: "2024-01-10"
 
-      # Roles e permissões
+      # Roles
       roles:
-        - role: template_user
+        - role: template_reader
           access: read
           firstLevelApprovers: Team Lead
           secondLevelApprovers: Platform Lead
-        - role: template_admin
+        - role: template_contributor
           access: write
           firstLevelApprovers: Platform Lead
+          secondLevelApprovers: Engineering Manager
+        - role: template_admin
+          access: admin
+          firstLevelApprovers: Engineering Manager
           secondLevelApprovers: CTO
 
       # SLA
       slaProperties:
         - property: generalAvailability
-          value: "2024-01-01T00:00:00-03:00"
+          value: "2023-06-01T00:00:00-03:00"
+        - property: endOfSupport
+          value: "2028-12-31T23:59:59-03:00"
         - property: retention
           value: 5
           unit: y
-          description: Templates mantidos por 5 anos
+          element: templates.created_date
+          description: Metadados mantidos por 5 anos
         - property: frequency
           value: 1
-          unit: w
-          description: Atualização semanal dos templates
+          unit: d
+          description: Sincronização diária com sistemas externos
+        - property: latency
+          value: 24
+          unit: h
+          element: templates.updated_date
+          description: Atualizações propagadas em até 24 horas
         - property: timeOfAvailability
           value: "00:00-23:59"
           driver: operational
+          description: Disponibilidade 24/7
 
       # Suporte
       support:
-        - channel: '#platform-engineering'
+        - channel: '#platform-templates'
           tool: slack
-          description: Canal do Slack para suporte
-        - channel: platform-support
+          description: Canal do Slack para suporte e discussões
+          customProperties:
+            - property: servicehours
+              value: "9-18 BRT"
+        - channel: platform-templates
           tool: email
-          url: mailto:platform-support@example.com
+          url: mailto:platform-templates@example.com
           scope: general
+          description: Email para suporte geral
         - channel: GitHub Issues
           url: https://github.com/plataform-templates/issues
-          description: Reportar problemas e solicitar features
+          description: Reportar bugs e solicitar features
+          scope: issues
+        - channel: Platform Templates Portal
+          url: https://portal.platform-templates.io
+          description: Portal de auto-atendimento e documentação
 
       # Propriedades customizadas
       customProperties:
-        - property: repository
-          value: https://github.com/plataform-templates
-        - property: license
-          value: MIT
-        - property: language
-          value: C#
+        - property: dataClassification
+          value: internal
+        - property: complianceLevel
+          value: standard
+        - property: encryptionAtRest
+          value: true
+        - property: encryptionInTransit
+          value: true
+        - property: backupFrequency
+          value: daily
+        - property: backupRetention
+          value: 30d
+        - property: gdprCompliant
+          value: true
+        - property: auditLogging
+          value: enabled
         - property: minimumDotNetVersion
           value: net6.0
         - property: supportedPlatforms
           value: ["Windows", "Linux", "macOS"]
+        - property: cicdIntegration
+          value: ["Azure DevOps", "GitHub Actions", "GitLab CI"]
 
-      contractCreatedTs: "2024-12-31T00:00:00-03:00"
+      contractCreatedTs: "2024-12-31T12:00:00-03:00"
