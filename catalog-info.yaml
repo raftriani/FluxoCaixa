@@ -2,8 +2,8 @@
 apiVersion: backstage.io/v1alpha1
 kind: System
 metadata:
-  name: cross-plataforma-net-templates
-  title: Cross Plataforma .NET Templates
+  name: plataform-templates
+  title: Plataforma .NET Templates
   description: Templates para geração de projetos .NET multiplataforma
   tags:
     - dotnet
@@ -12,11 +12,11 @@ metadata:
     - yeoman
     - generator
   links:
-    - url: https://github.com/SQ-Green/cross-plataforma-net-templates
+    - url: https://github.com/plataform-templates
       title: Repositório GitHub
       icon: github
   annotations:
-    github.com/project-slug: SQ-Green/cross-plataforma-net-templates
+    github.com/project-slug: cross-plataform-templates
 spec:
   owner: group:default/sq-green
   domain: platform-engineering
@@ -33,7 +33,7 @@ metadata:
     - dotnet
     - scaffolding
   annotations:
-    github.com/project-slug: SQ-Green/cross-plataforma-net-templates
+    github.com/project-slug: plataform-templates
     backstage.io/techdocs-ref: dir:.
 spec:
   type: library
@@ -57,7 +57,7 @@ spec:
   type: openapi
   lifecycle: production
   owner: group:default/sq-green
-  system: cross-plataforma-net-templates
+  system: plataform-templates
   definition: |
     openapi: 3.0.0
     info:
@@ -82,7 +82,7 @@ metadata:
     - metadata
     - dotnet
   annotations:
-    github.com/project-slug: SQ-Green/cross-plataforma-net-templates
+    github.com/project-slug: plataform-templates
 spec:
   # Informações do contrato
   domain: platform-engineering
@@ -93,7 +93,7 @@ spec:
   
   authoritativeDefinitions:
     - type: canonical
-      url: https://github.com/SQ-Green/cross-plataforma-net-templates
+      url: https://github.com/plataform-templates
       description: URL canônica do repositório de templates
     - type: documentation
       url: https://bitol-io.github.io/open-data-contract-standard/v3.1.0/
@@ -111,8 +111,8 @@ spec:
     - server: template-repository
       type: github
       host: github.com
-      organization: SQ-Green
-      repository: cross-plataforma-net-templates
+      organization: Plataform
+      repository: plataform-templates
 
   # Schema dos templates
   schema:
@@ -472,7 +472,7 @@ spec:
   # Propriedades customizadas
   customProperties:
     - property: repository
-      value: https://github.com/SQ-Green/cross-plataforma-net-templates
+      value: https://github.com/plataform-templates
     - property: license
       value: MIT
     - property: language
