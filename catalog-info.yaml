@@ -2,649 +2,484 @@
 apiVersion: backstage.io/v1alpha1
 kind: System
 metadata:
-  name: fluxo-caixa
-  title: Sistema de Fluxo de Caixa
-  description: Sistema de controle de fluxo de caixa com arquitetura de microsserviços
+  name: cross-plataforma-net-templates
+  title: Cross Plataforma .NET Templates
+  description: Templates para geração de projetos .NET multiplataforma
   tags:
     - dotnet
-    - microservices
-    - ddd
-    - csharp
-    - financial
+    - templates
+    - scaffolding
+    - yeoman
+    - generator
   links:
-    - url: https://github.com/raftriani/FluxoCaixa
+    - url: https://github.com/SQ-Green/cross-plataforma-net-templates
       title: Repositório GitHub
       icon: github
   annotations:
-    github.com/project-slug: raftriani/FluxoCaixa
+    github.com/project-slug: SQ-Green/cross-plataforma-net-templates
 spec:
-  owner: user:default/rafael.triani
-  domain: financial
+  owner: group:default/sq-green
+  domain: platform-engineering
 
 ---
 apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
-  name: fluxocaixa-lancamentos-api
-  title: API de Lançamentos
-  description: Microsserviço responsável por gerenciar lançamentos de crédito e débito
+  name: dotnet-template-generator
+  title: .NET Template Generator
+  description: Gerador de templates para projetos .NET multiplataforma
   tags:
-    - api
-    - dotnet-core
-    - microservice
-    - sql-server
+    - template
+    - dotnet
+    - scaffolding
   annotations:
-    github.com/project-slug: raftriani/FluxoCaixa
+    github.com/project-slug: SQ-Green/cross-plataforma-net-templates
     backstage.io/techdocs-ref: dir:.
 spec:
-  type: service
+  type: library
   lifecycle: production
-  owner: user:default/rafael.triani
-  system: fluxo-caixa
+  owner: group:default/sq-green
+  system: cross-plataforma-net-templates
   providesApis:
-    - lancamentos-api
-  consumesApis:
-    - fluxocaixa-transacoes-data-contract
-  dependsOn:
-    - resource:sqlserver-lancamentos
-    - resource:rabbitmq
+    - dotnet-template-api
 
 ---
 apiVersion: backstage.io/v1alpha1
 kind: API
 metadata:
-  name: lancamentos-api
-  title: API de Lançamentos
-  description: API REST para lançamentos de crédito e débito no fluxo de caixa
+  name: dotnet-template-api
+  title: .NET Template API
+  description: API para geração de templates .NET
   tags:
-    - rest
+    - template
     - dotnet
 spec:
   type: openapi
   lifecycle: production
-  owner: user:default/rafael.triani
-  system: fluxo-caixa
+  owner: group:default/sq-green
+  system: cross-plataforma-net-templates
   definition: |
     openapi: 3.0.0
     info:
-      title: Lançamentos API
+      title: .NET Template API
       version: 1.0.0
-      description: API para gerenciamento de lançamentos financeiros
+      description: API para geração e scaffolding de templates .NET
     servers:
-      - url: http://localhost:5001/cashier/api
+      - url: http://localhost:8080
         description: Servidor local
-    paths:
-      /account/add-entry:
-        post:
-          summary: Adicionar lançamento de crédito ou débito
-          operationId: addEntry
-          tags:
-            - Account
-          requestBody:
-            required: true
-            content:
-              application/json:
-                schema:
-                  type: object
-                  properties:
-                    Type:
-                      type: integer
-                      description: Tipo do lançamento (1 = Crédito, 2 = Débito)
-                    Value:
-                      type: number
-                      description: Valor do lançamento
-                    Description:
-                      type: string
-                      description: Descrição do lançamento
-          responses:
-            '200':
-              description: Lançamento criado com sucesso
-      /account/show-info:
-        get:
-          summary: Obter informações da conta
-          operationId: getAccountInfo
-          tags:
-            - Account
-          responses:
-            '200':
-              description: Informações da conta
-              content:
-                application/json:
-                  schema:
-                    type: object
-                    properties:
-                      value:
-                        type: number
-                      lastUpdate:
-                        type: string
-                        format: date-time
 
 ---
-apiVersion: backstage.io/v1alpha1
-kind: Component
+# ODCS v3.1.0 - Open Data Contract Standard
+# Exemplo de contrato de dados para templates .NET
+apiVersion: v3.1.0
+kind: DataContract
 metadata:
-  name: fluxocaixa-consolidacao-api
-  title: API de Consolidação
-  description: Microsserviço responsável por consolidar dados financeiros
+  name: dotnet-templates-data-contract
+  title: Contrato de Dados - Templates .NET
+  description: Contrato de dados definindo a estrutura dos templates .NET gerados
   tags:
-    - api
-    - dotnet-core
-    - microservice
-    - mongodb
-  annotations:
-    github.com/project-slug: raftriani/FluxoCaixa
-spec:
-  type: service
-  lifecycle: production
-  owner: user:default/rafael.triani
-  system: fluxo-caixa
-  providesApis:
-    - consolidacao-api
-  consumesApis:
-    - fluxocaixa-transacoes-data-contract
-  dependsOn:
-    - resource:mongodb-consolidacao
-    - resource:rabbitmq
-
----
-apiVersion: backstage.io/v1alpha1
-kind: API
-metadata:
-  name: consolidacao-api
-  title: API de Consolidação
-  description: API para consolidação de dados financeiros
-  tags:
-    - rest
+    - templates
+    - metadata
     - dotnet
-spec:
-  type: openapi
-  lifecycle: production
-  owner: user:default/rafael.triani
-  system: fluxo-caixa
-  definition: |
-    openapi: 3.0.0
-    info:
-      title: Consolidação API
-      version: 1.0.0
-    servers:
-      - url: http://localhost:5002/consolidation/api
-
----
-apiVersion: backstage.io/v1alpha1
-kind: Component
-metadata:
-  name: fluxocaixa-relatorio-api
-  title: API de Relatórios
-  description: Microsserviço responsável por gerar relatórios consolidados
-  tags:
-    - api
-    - dotnet-core
-    - microservice
-    - mongodb
   annotations:
-    github.com/project-slug: raftriani/FluxoCaixa
+    github.com/project-slug: SQ-Green/cross-plataforma-net-templates
 spec:
-  type: service
-  lifecycle: production
-  owner: user:default/rafael.triani
-  system: fluxo-caixa
-  consumesApis:
-    - fluxocaixa-transacoes-data-contract
-  providesApis:
-    - relatorio-api
-  dependsOn:
-    - resource:mongodb-relatorio
+  # Informações do contrato
+  domain: platform-engineering
+  dataProduct: dotnet-templates
+  version: 3.1.0
+  status: active
+  id: c4f89a21-3c4e-4b2a-9f1e-7d8e3a9c5b2f
+  
+  authoritativeDefinitions:
+    - type: canonical
+      url: https://github.com/SQ-Green/cross-plataforma-net-templates
+      description: URL canônica do repositório de templates
+    - type: documentation
+      url: https://bitol-io.github.io/open-data-contract-standard/v3.1.0/
+      description: Documentação oficial ODCS v3.1.0
 
----
-apiVersion: backstage.io/v1alpha1
-kind: API
-metadata:
-  name: relatorio-api
-  title: API de Relatórios
-  description: API REST para geração de relatórios diários consolidados
-  tags:
-    - rest
-    - dotnet
-spec:
-  type: openapi
-  lifecycle: production
-  owner: user:default/rafael.triani
-  system: fluxo-caixa
-  definition: |
-    openapi: 3.0.0
-    info:
-      title: Relatórios API
-      version: 1.0.0
-      description: API para geração de relatórios financeiros
-    servers:
-      - url: http://localhost:5003/reports/api
-    paths:
-      /report/show-daily-report:
-        get:
-          summary: Obter relatório diário consolidado
-          operationId: getDailyReport
-          tags:
-            - Report
-          parameters:
-            - name: month
-              in: query
-              required: true
-              schema:
-                type: integer
-            - name: year
-              in: query
-              required: true
-              schema:
-                type: integer
-            - name: day
-              in: query
-              required: true
-              schema:
-                type: integer
-          responses:
-            '200':
-              description: Relatório diário
-              content:
-                application/json:
-                  schema:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        userId:
-                          type: string
-                        userName:
-                          type: string
-                        entryType:
-                          type: integer
-                        entryValue:
-                          type: number
-                        accountValueAfterEntry:
-                          type: number
-                        entryDescription:
-                          type: string
-                        entryDate:
-                          type: string
-                          format: date-time
+  description:
+    purpose: Estrutura de dados dos templates .NET para scaffolding de projetos
+    limitations: Templates limitados ao ecossistema .NET
+    usage: Geração automatizada de projetos .NET com padrões estabelecidos
 
----
-apiVersion: backstage.io/v1alpha1
-kind: Resource
-metadata:
-  name: sqlserver-lancamentos
-  title: SQL Server - Lançamentos
-  description: Banco de dados SQL Server para persistência de lançamentos
-  tags:
-    - database
-    - sqlserver
-spec:
-  type: database
-  lifecycle: production
-  owner: user:default/rafael.triani
-  system: fluxo-caixa
+  tenant: SQ-Green
+  
+  # Servidores e infraestrutura
+  servers:
+    - server: template-repository
+      type: github
+      host: github.com
+      organization: SQ-Green
+      repository: cross-plataforma-net-templates
 
----
-apiVersion: backstage.io/v1alpha1
-kind: Resource
-metadata:
-  name: mongodb-consolidacao
-  title: MongoDB - Consolidação
-  description: Banco de dados MongoDB para dados consolidados
-  tags:
-    - database
-    - mongodb
-    - nosql
-spec:
-  type: database
-  lifecycle: production
-  owner: user:default/rafael.triani
-  system: fluxo-caixa
-
----
-apiVersion: backstage.io/v1alpha1
-kind: Resource
-metadata:
-  name: mongodb-relatorio
-  title: MongoDB - Relatórios
-  description: Banco de dados MongoDB para relatórios
-  tags:
-    - database
-    - mongodb
-    - nosql
-spec:
-  type: database
-  lifecycle: production
-  owner: user:default/rafael.triani
-  system: fluxo-caixa
-
----
-apiVersion: backstage.io/v1alpha1
-kind: Resource
-metadata:
-  name: rabbitmq
-  title: RabbitMQ
-  description: Message broker para comunicação entre microsserviços
-  tags:
-    - messaging
-    - rabbitmq
-    - event-driven
-spec:
-  type: message-broker
-  lifecycle: production
-  owner: user:default/rafael.triani
-  system: fluxo-caixa
-
----
-# ODCS - Open Data Contract Standard v3.1.0
-# Contrato de Dados para transações do Sistema de Fluxo de Caixa
-apiVersion: backstage.io/v1alpha1
-kind: API
-metadata:
-  name: fluxocaixa-transacoes-data-contract
-  title: Contrato de Dados - Transações do Fluxo de Caixa
-  description: Contrato de dados ODCS v3.1.0 para transações financeiras do sistema de fluxo de caixa
-  tags:
-    - odcs
-    - data-contract
-    - financial
-    - transactions
-  annotations:
-    github.com/project-slug: raftriani/FluxoCaixa
-spec:
-  type: odcs
-  lifecycle: production
-  owner: user:default/rafael.triani
-  system: fluxo-caixa
-  definition: |
-    # ODCS Data Contract - Transações Fluxo de Caixa
-    Este é um contrato de dados seguindo o padrão ODCS v3.1.0
-  odcs:
-    schemaType: dataContract
-    schemaVersion: v3.1.0
-    data:
-      # Campos obrigatórios do ODCS v3.1.0
-      apiVersion: v3.1.0
-      kind: DataContract
-      id: fc-transactions-v1-001
-      version: 1.0.0
-      status: active
+  # Schema dos templates
+  schema:
+    - id: template_metadata
+      name: template_metadata
+      physicalName: template_metadata
+      physicalType: json-schema
+      businessName: Template Metadata
+      description: Metadados dos templates .NET disponíveis
+      tags: ['metadata', 'templates']
+      dataGranularityDescription: Um registro por template disponível
       
-      # Informações fundamentais
-      name: fluxo-caixa-transactions
-      domain: financial
-      dataProduct: cashflow-transactions
-      tenant: FluxoCaixaSystem
-      
-      description:
-        purpose: Contrato de dados para transações financeiras do sistema de fluxo de caixa
-        limitations: Dados históricos disponíveis apenas dos últimos 7 anos. Requer autenticação e autorização específica.
-        usage: Utilizado para análise financeira, relatórios gerenciais e auditoria
-        authoritativeDefinitions:
-          - type: businessDefinition
-            url: https://github.com/raftriani/FluxoCaixa/wiki/data-contract
-            description: Definição de negócio do contrato de dados
-      
-      tags:
-        - finance
-        - transactions
-        - cashflow
-        - payments
-      
-      # Servidores onde os dados residem
-      servers:
-        - id: sqlserver_lancamentos
-          server: sqlserver-lancamentos
-          type: sqlserver
-          host: localhost
-          port: 1433
-          database: FluxoCaixaDB
-          schema: dbo
-          description: SQL Server para lançamentos financeiros
-          environment: production
-      
-      # Schema - Definição dos dados
-      schema:
-        - id: lancamentos_table
-          name: lancamentos
-          physicalName: TB_LANCAMENTOS
-          physicalType: table
-          businessName: Tabela de Lançamentos Financeiros
-          description: Armazena todos os lançamentos de crédito e débito do sistema
-          tags:
-            - core-table
-            - financial-data
-          dataGranularityDescription: Um registro por lançamento financeiro
-          
-          properties:
-            - id: lancamento_id_prop
-              name: id
-              physicalName: LANCAMENTO_ID
-              businessName: Identificador do Lançamento
-              logicalType: integer
-              physicalType: BIGINT
-              primaryKey: true
-              primaryKeyPosition: 1
-              required: true
-              unique: true
-              description: Identificador único do lançamento
-              classification: public
-              criticalDataElement: true
-              
-            - id: tipo_lancamento_prop
-              name: tipo
-              physicalName: TIPO_LANCAMENTO
-              businessName: Tipo de Lançamento
-              logicalType: integer
-              physicalType: INT
-              required: true
-              description: Tipo do lançamento (1 = Crédito, 2 = Débito)
-              classification: public
-              examples:
-                - 1
-                - 2
-              quality:
-                - metric: invalidValues
-                  mustBe: 0
-                  description: Tipo deve ser 1 ou 2
-                  dimension: conformity
-                  type: library
-                  severity: error
-                  
-            - id: valor_prop
-              name: valor
-              physicalName: VALOR
-              businessName: Valor do Lançamento
-              logicalType: number
-              physicalType: DECIMAL(18,2)
-              required: true
-              description: Valor monetário do lançamento em BRL
-              classification: restricted
-              criticalDataElement: true
-              logicalTypeOptions:
-                minimum: 0.01
-                format: f64
-              examples:
-                - 1000.50
-                - 2500.00
-              quality:
-                - metric: nullValues
-                  mustBe: 0
-                  description: Valor não pode ser nulo
-                  dimension: completeness
-                  type: library
-                  severity: error
-                  
-            - id: descricao_prop
-              name: descricao
-              physicalName: DESCRICAO
-              businessName: Descrição do Lançamento
-              logicalType: string
-              physicalType: VARCHAR(500)
-              required: true
-              description: Descrição textual do lançamento financeiro
-              classification: restricted
-              logicalTypeOptions:
-                maxLength: 500
-                minLength: 1
-              examples:
-                - Pagamento de fornecedor
-                - Recebimento de cliente
-                  
-            - id: data_lancamento_prop
-              name: data_lancamento
-              physicalName: DATA_LANCAMENTO
-              businessName: Data do Lançamento
-              logicalType: timestamp
-              physicalType: DATETIME2
-              required: true
-              description: Data e hora do registro do lançamento
-              classification: public
-              partitioned: true
-              partitionKeyPosition: 1
-              criticalDataElement: true
-              logicalTypeOptions:
-                timezone: true
-                defaultTimezone: America/Sao_Paulo
-              examples:
-                - "2024-12-29T10:30:00-03:00"
-              quality:
-                - metric: nullValues
-                  mustBe: 0
-                  description: Data do lançamento é obrigatória
-                  dimension: completeness
-                  type: library
-                  severity: error
-                  
-            - id: usuario_id_prop
-              name: usuario_id
-              physicalName: USUARIO_ID
-              businessName: Identificador do Usuário
-              logicalType: string
-              physicalType: VARCHAR(50)
-              required: true
-              description: ID do usuário que realizou o lançamento
-              classification: restricted
-              relationships:
-                - to: usuarios.id
-                  type: foreignKey
-              
-            - id: conta_id_prop
-              name: conta_id
-              physicalName: CONTA_ID
-              businessName: Identificador da Conta
-              logicalType: integer
-              physicalType: BIGINT
-              required: true
-              description: ID da conta afetada pelo lançamento
-              classification: restricted
-              relationships:
-                - to: contas.id
-                  type: foreignKey
-                  
+      properties:
+        - id: template_id_prop
+          name: template_id
+          physicalName: templateId
+          primaryKey: true
+          primaryKeyPosition: 1
+          businessName: Identificador do Template
+          logicalType: string
+          physicalType: varchar(100)
+          required: true
+          description: Identificador único do template
+          partitioned: false
+          criticalDataElement: true
+          tags: ['identifier']
+          classification: public
+          examples:
+            - "dotnet-web-api-template"
+            - "dotnet-microservice-template"
+            - "dotnet-console-app-template"
+
+        - id: template_name_prop
+          name: template_name
+          physicalName: templateName
+          primaryKey: false
+          businessName: Nome do Template
+          logicalType: string
+          physicalType: varchar(255)
+          required: true
+          description: Nome descritivo do template
+          classification: public
+          examples:
+            - ".NET Web API Template"
+            - ".NET Microservice Template"
+            - ".NET Console Application"
+
+        - id: template_version_prop
+          name: template_version
+          physicalName: templateVersion
+          primaryKey: false
+          businessName: Versão do Template
+          logicalType: string
+          physicalType: varchar(20)
+          required: true
+          description: Versão semântica do template
+          classification: public
+          examples:
+            - "1.0.0"
+            - "2.1.0"
+            - "3.0.0-beta"
           quality:
-            - metric: rowCount
-              mustBeGreaterThan: 0
-              description: Tabela deve conter registros
-              dimension: completeness
-              type: library
-              severity: warning
-              schedule: "0 8 * * *"
-              scheduler: cron
+            - metric: pattern
+              mustBe: ^\d+\.\d+\.\d+(-[a-zA-Z0-9]+)?$
+              description: Deve seguir versionamento semântico
+              dimension: validity
+              type: regex
+              severity: error
+              businessImpact: operational
+
+        - id: dotnet_version_prop
+          name: dotnet_version
+          physicalName: dotnetVersion
+          primaryKey: false
+          businessName: Versão do .NET
+          logicalType: string
+          physicalType: varchar(20)
+          required: true
+          description: Versão do .NET Framework ou .NET Core suportada
+          classification: public
+          examples:
+            - "net6.0"
+            - "net7.0"
+            - "net8.0"
+
+        - id: template_type_prop
+          name: template_type
+          physicalName: templateType
+          primaryKey: false
+          businessName: Tipo do Template
+          logicalType: string
+          physicalType: varchar(50)
+          required: true
+          description: Categoria do template
+          classification: public
+          examples:
+            - "web-api"
+            - "microservice"
+            - "console"
+            - "library"
+            - "worker-service"
+
+        - id: created_date_prop
+          name: created_date
+          physicalName: createdDate
+          primaryKey: false
+          businessName: Data de Criação
+          logicalType: timestamp
+          physicalType: datetime
+          required: true
+          description: Data e hora de criação do template
+          partitioned: true
+          partitionKeyPosition: 1
+          classification: public
+          examples:
+            - "2024-01-15T10:30:00Z"
+            - "2024-06-20T14:45:00Z"
+
+        - id: author_prop
+          name: author
+          physicalName: author
+          primaryKey: false
+          businessName: Autor do Template
+          logicalType: string
+          physicalType: varchar(100)
+          required: false
+          description: Nome do autor ou equipe responsável
+          classification: internal
+          examples:
+            - "SQ-Green Team"
+            - "Platform Engineering"
+
+        - id: description_prop
+          name: description
+          physicalName: description
+          primaryKey: false
+          businessName: Descrição do Template
+          logicalType: string
+          physicalType: text
+          required: false
+          description: Descrição detalhada do template e seus recursos
+          classification: public
+
+        - id: dependencies_prop
+          name: dependencies
+          physicalName: dependencies
+          primaryKey: false
+          businessName: Dependências
+          logicalType: array
+          physicalType: json
+          required: false
+          description: Lista de dependências NuGet e bibliotecas necessárias
+          classification: public
+          examples:
+            - '["Microsoft.AspNetCore.App", "Swashbuckle.AspNetCore"]'
+            - '["Serilog", "MediatR"]'
+
+      quality:
+        - metric: rowCount
+          mustBeGreaterThan: 0
+          type: library
+          description: Deve haver pelo menos um template disponível
+          dimension: completeness
+          severity: warning
+          businessImpact: operational
+
+    - id: template_configuration
+      name: template_configuration
+      physicalName: template_configuration
+      physicalType: json-schema
+      businessName: Template Configuration
+      description: Configurações e parâmetros dos templates
+      tags: ['configuration', 'settings']
       
-      # Qualidade dos dados
-      # Support e comunicação
-      support:
-        - channel: "#fluxo-caixa-suporte"
-          tool: slack
-          scope: issues
-          description: Canal para suporte e resolução de problemas
-          
-        - channel: fluxocaixa-dev@empresa.com.br
-          tool: email
-          scope: notifications
-          description: Email para notificações importantes
-          url: mailto:fluxocaixa-dev@empresa.com.br
-      
-      # Pricing
-      price:
-        priceAmount: 0
-        priceCurrency: BRL
-        priceUnit: query
-      
-      # Team
-      team:
-        name: Equipe Fluxo de Caixa
-        description: Equipe responsável pelo desenvolvimento e manutenção do sistema
-        members:
-          - username: rafael.triani
-            role: Owner
-            description: Product Owner e desenvolvedor principal
-            dateIn: "2024-01-01"
-          - username: dev.backend
-            role: Backend Developer
-            dateIn: "2024-06-01"
-          - username: data.engineer
-            role: Data Engineer
-            description: Responsável pelos pipelines de dados
-            dateIn: "2024-08-01"
-      
-      # Roles e permissões
-      roles:
-        - role: financeiro_leitura
-          access: read
-          description: Acesso de leitura aos dados financeiros
-          firstLevelApprovers: Gerente Financeiro
-          secondLevelApprovers: Diretor Financeiro
-          
-        - role: financeiro_escrita
-          access: write
-          description: Acesso de escrita aos lançamentos financeiros
-          firstLevelApprovers: Gerente Financeiro
-          secondLevelApprovers: Diretor Financeiro
-      
-      # SLA
-      slaProperties:
-        - property: latency
-          value: 1
-          unit: d
-          description: Dados disponíveis com até 1 dia de atraso
-          driver: operational
-          
-        - property: retention
-          value: 7
-          unit: y
-          description: Dados retidos por 7 anos conforme legislação
-          driver: regulatory
-          
-        - property: frequency
-          value: 1
-          unit: d
-          description: Atualização diária dos dados
-          driver: operational
-          
-        - property: generalAvailability
-          value: "2024-01-15T00:00:00-03:00"
-          description: Data de disponibilização geral do sistema
-          
-        - property: timeOfAvailability
-          value: "00:00-23:59"
-          description: Disponível 24/7
-          driver: operational
-      
-      # Custom Properties
-      customProperties:
-        - property: dataClassification
-          value: confidencial
-          description: Classificação de segurança dos dados
-          
-        - property: complianceFramework
-          value:
-            - LGPD
-            - SOX
-          description: Frameworks de compliance aplicáveis
-          
-        - property: backupFrequency
-          value: diario
-          description: Frequência de backup dos dados
-      
-      contractCreatedTs: "2024-12-29T12:00:00-03:00"
+      relationships:
+        - type: foreignKey
+          from:
+            - template_configuration.template_id
+          to:
+            - template_metadata.template_id
+          customProperties:
+            - property: description
+              value: "Relacionamento com metadados do template"
+            - property: cardinality
+              value: "many-to-one"
+
+      properties:
+        - id: config_id_prop
+          name: config_id
+          physicalName: configId
+          primaryKey: true
+          primaryKeyPosition: 1
+          businessName: Identificador da Configuração
+          logicalType: string
+          physicalType: varchar(100)
+          required: true
+          description: Identificador único da configuração
+          classification: public
+
+        - id: config_template_id_prop
+          name: template_id
+          physicalName: templateId
+          primaryKey: false
+          businessName: ID do Template
+          logicalType: string
+          physicalType: varchar(100)
+          required: true
+          description: Referência ao template
+          classification: public
+          relationships:
+            - to: template_metadata.template_id
+              type: foreignKey
+
+        - id: parameter_name_prop
+          name: parameter_name
+          physicalName: parameterName
+          primaryKey: false
+          businessName: Nome do Parâmetro
+          logicalType: string
+          physicalType: varchar(100)
+          required: true
+          description: Nome do parâmetro de configuração
+          classification: public
+          examples:
+            - "ProjectName"
+            - "TargetFramework"
+            - "AuthenticationType"
+
+        - id: parameter_type_prop
+          name: parameter_type
+          physicalName: parameterType
+          primaryKey: false
+          businessName: Tipo do Parâmetro
+          logicalType: string
+          physicalType: varchar(50)
+          required: true
+          description: Tipo de dado do parâmetro
+          classification: public
+          examples:
+            - "string"
+            - "boolean"
+            - "choice"
+            - "number"
+
+        - id: default_value_prop
+          name: default_value
+          physicalName: defaultValue
+          primaryKey: false
+          businessName: Valor Padrão
+          logicalType: string
+          physicalType: varchar(255)
+          required: false
+          description: Valor padrão do parâmetro
+          classification: public
+
+        - id: is_required_prop
+          name: is_required
+          physicalName: isRequired
+          primaryKey: false
+          businessName: É Obrigatório
+          logicalType: boolean
+          physicalType: boolean
+          required: true
+          description: Indica se o parâmetro é obrigatório
+          classification: public
+          examples:
+            - true
+            - false
+
+  # Qualidade dos dados
+  quality:
+    - metric: freshness
+      mustBeLessThan: 7
+      type: custom
+      description: Templates devem ser atualizados semanalmente
+      dimension: timeliness
+      severity: warning
+      businessImpact: operational
+      schedule: 0 0 * * 0
+      scheduler: cron
+
+    - metric: completeness
+      mustBe: 100
+      description: Todos os campos obrigatórios devem estar preenchidos
+      dimension: completeness
+      type: library
+      severity: error
+      businessImpact: critical
+
+  # Pricing
+  price:
+    priceAmount: 0.00
+    priceCurrency: BRL
+    priceUnit: template
+  
+  # Equipe responsável
+  team:
+    name: platform-engineering
+    description: Equipe de Engenharia de Plataforma responsável pelos templates
+    members:
+      - username: platform-lead
+        role: Tech Lead
+        description: Líder técnico da plataforma
+        dateIn: "2024-01-01"
+      - username: devops-engineer
+        role: DevOps Engineer
+        description: Engenheiro responsável pela automação
+        dateIn: "2024-01-15"
+
+  # Roles e permissões
+  roles:
+    - role: template_user
+      access: read
+      firstLevelApprovers: Team Lead
+      secondLevelApprovers: Platform Lead
+    - role: template_admin
+      access: write
+      firstLevelApprovers: Platform Lead
+      secondLevelApprovers: CTO
+
+  # SLA
+  slaProperties:
+    - property: generalAvailability
+      value: "2024-01-01T00:00:00-03:00"
+    - property: retention
+      value: 5
+      unit: y
+      description: Templates mantidos por 5 anos
+    - property: frequency
+      value: 1
+      unit: w
+      description: Atualização semanal dos templates
+    - property: timeOfAvailability
+      value: "00:00-23:59"
+      driver: operational
+
+  # Suporte
+  support:
+    - channel: '#platform-engineering'
+      tool: slack
+      description: Canal do Slack para suporte
+    - channel: platform-support
+      tool: email
+      url: mailto:platform-support@sqgreen.com
+      scope: general
+    - channel: GitHub Issues
+      url: https://github.com/SQ-Green/cross-plataforma-net-templates/issues
+      description: Reportar problemas e solicitar features
+
+  # Tags
+  tags:
+    - dotnet
+    - templates
+    - scaffolding
+    - platform-engineering
+
+  # Propriedades customizadas
+  customProperties:
+    - property: repository
+      value: https://github.com/SQ-Green/cross-plataforma-net-templates
+    - property: license
+      value: MIT
+    - property: language
+      value: C#
+    - property: minimumDotNetVersion
+      value: net6.0
+    - property: supportedPlatforms
+      value: ["Windows", "Linux", "macOS"]
+
+  contractCreatedTs: "2024-12-31T00:00:00-03:00"
